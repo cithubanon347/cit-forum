@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIT Chennai — Student Unofficial Forum</title>
+
+<!-- Supabase JS SDK v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // ==========================================
+  // CONFLICT-FREE CLIENT INITIALIZATION
+  // ==========================================
+  const SUPABASE_URL = "https://saqwejwmsvderppqeztq.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhcXdlandtc3ZkZXJwcHFlenRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwNTY5NjIsImV4cCI6MjEwNTYzMjk2Mn0.Ilv0fyI_cfc1Xkck8ONDK06cPr-36yKthWzpc1KVVD8";
+  
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#050505; --card:#0d0d0d; --card2:#111; --text:#f3f3f3; --muted:#777; --line:rgba(255,255,255,.09); --white:#ededed;
+}
+
+html,body{ min-height:100%; background:var(--bg); color:var(--text); font-family:Inter,Arial,sans-serif; }
+body{overflow-x:hidden}
+
+/* LOADING SCREEN */
+.loader{ position:fixed; inset:0; background:#050505; display:flex; align-items:center; justify-content:center; z-index:100; opacity:1; transition:opacity 0.6s ease; }
+.loader.fade-out{ opacity:0; visibility:hidden; }
+.loader-content{ width:min(760px,85vw); text-align:center; }
+.loader-content h1{ font-size:clamp(52px,10vw,126px); line-height:.9; letter-spacing:.17em; font-weight:600; animation: pulseLoader 1.5s ease-in-out infinite; }
+@keyframes pulseLoader { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+.loader-sub{ margin-top:28px; font-size:13px; letter-spacing:.42em; color:#8b8b8b; text-transform:uppercase; }
+
+.site{ min-height:100vh; opacity:0; transform:translateY(8px); transition:opacity .7s ease, transform .7s ease; }
+.site.ready{ opacity:1; transform:translateY(0); }
+
+.nav{ height:82px; max-width:1180px; margin:auto; padding:0 24px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; }
+.logo{ color:#eee; text-decoration:none; font-weight:600; letter-spacing:.14em; }
+.nav-right{ display:flex; align-items:center; gap:13px; }
+.nav-user{ font:10px "DM Mono",monospace; color:#666; }
+
+.mod-badge{ background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:2px 6px; border-radius:4px; font-size:8px; margin-left:6px; letter-spacing:.1em; }
+.owner-badge{ background:rgba(255, 215, 0, 0.15); color:#ffd700; border:1px solid rgba(255, 215, 0, 0.3); padding:2px 6px; border-radius:4px; font-size:8px; margin-left:6px; letter-spacing:.1em; }
+
+button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
+.small-btn,.ghost-btn,.primary-btn{ border-radius:10px; padding:11px 14px; font-size:9px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; transition: all 0.2s ease; }
+.small-btn:hover,.ghost-btn:hover{ background:rgba(255,255,255,0.05); color:#fff; }
+.primary-btn{ background:#eee; color:#050505; border:1px solid #eee; }
+.primary-btn:hover{ transform:translateY(-1px); filter:brightness(1.1); }
+.hidden{ display:none!important; }
+
+/* AUTH SECTION */
+.auth{ width:min(1100px,92vw); margin:auto; min-height:calc(100vh - 82px); display:grid; grid-template-columns:1fr 420px; gap:80px; align-items:center; }
+.auth-copy h2{ font-size:clamp(50px,7vw,84px); line-height:.94; letter-spacing:-.055em; }
+.auth-copy h2 span{ color:#777; }
+.auth-copy p{ max-width:520px; margin-top:28px; color:#818181; font-size:14px; line-height:1.8; }
+.mono{ font:9px "DM Mono",monospace; color:#555; letter-spacing:.14em; text-transform:uppercase; }
+
+.card{ background:rgba(13,13,13,.95); border:1px solid var(--line); border-radius:22px; padding:30px; box-shadow:0 30px 90px rgba(0,0,0,.45); }
+.card-top{ display:flex; justify-content:space-between; gap:20px; }
+.card-title{ margin-top:8px; font-size:27px; letter-spacing:-.035em; }
+
+.tabs{ display:grid; grid-template-columns:1fr 1fr; padding:4px; margin:25px 0; background:#080808; border:1px solid var(--line); border-radius:11px; gap:4px; }
+.tabs button{ border:0; background:transparent; color:#5d5d5d; padding:11px; border-radius:8px; font-size:10px; transition:0.2s; }
+.tabs button.active{ background:#1a1a1a; color:#eee; }
+
+.form{ display:none; }
+.form.active{ display:block; }
+.field{ margin-bottom:15px; }
+.field label{ display:block; font-size:9px; color:#707070; letter-spacing:.1em; text-transform:uppercase; }
+.field input, .field select, .field textarea{ width:100%; margin-top:8px; border:1px solid var(--line); outline:none; background:#090909; color:#eee; border-radius:10px; padding:13px; font-size:12px; transition: border-color 0.2s; }
+.field input:focus, .field textarea:focus, .field select:focus{ border-color:rgba(255,255,255,0.4); }
+.field input{ height:48px; }
+
+.password-box{ position:relative; }
+.password-box input{ padding-right:65px; }
+.show-btn{ position:absolute; right:7px; top:15px; padding:7px 9px; border:1px solid var(--line); background:#111; color:#666; border-radius:7px; font-size:8px; text-transform:uppercase; }
+
+.form-row{ display:flex; justify-content:space-between; align-items:center; margin:-1px 0 18px; font-size:9px; color:#666; }
+.text-button{ background:none; border:0; color:#666; cursor:pointer; font-size:9px; }
+.text-button:hover{ color:#eee; }
+.full{ width:100%; }
+.message{ display:none; margin-top:12px; font-size:9px; line-height:1.6; }
+.message.show{ display:block; }
+.message.error{ color:#ff7777; }
+.message.success{ color:#8fe0ae; }
+
+/* MODALS */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-card { background: #0d0d0d; border: 1px solid var(--line); border-radius: 22px; width: min(420px, 92vw); box-shadow: 0 40px 90px rgba(0,0,0,0.6); padding: 30px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.modal-header h3 { font-size: 16px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.modal-desc { font-size: 12px; color: #888; margin-bottom: 20px; line-height: 1.6; }
+
+/* FORUM SECTION */
+.forum{ width:min(1180px,92vw); margin:auto; padding:70px 0 30px; }
+.forum-header{ display:flex; justify-content:space-between; align-items:end; padding-bottom:36px; border-bottom:1px solid var(--line); }
+.forum-header h2{ margin-top:14px; font-size:clamp(44px,6vw,74px); line-height:.94; }
+.forum-layout{ display:grid; grid-template-columns:190px 1fr; gap:35px; padding-top:32px; }
+.sidebar{ border-right:1px solid var(--line); padding-right:22px; }
+.channel{ width:100%; display:flex; justify-content:space-between; padding:11px 10px; border:0; background:transparent; color:#666; border-radius:8px; text-align:left; font-size:11px; margin-bottom:4px; }
+.channel:hover,.channel.active{ background:#111; color:#eee; }
+
+/* COMPOSER LAYOUT */
+.new-post{ background:#0b0b0b; border:1px solid var(--line); border-radius:18px; padding:24px; margin-bottom:24px; display: flex; flex-direction: column; gap: 14px; }
+.composer-top{ display:flex; justify-content:space-between; color:#666; font:8px "DM Mono",monospace; letter-spacing:.15em; align-items:center; }
+.new-post input, .new-post textarea, .new-post select{ width:100%; background:#080808; border:1px solid var(--line); color:#eee; border-radius:9px; outline:none; padding:12px; font-size:12px; }
+.new-post textarea{ height:120px; resize:vertical; }
+.composer-bottom{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+
+.post{ background:#0a0a0a; border:1px solid var(--line); border-radius:18px; padding:22px; margin-bottom:12px; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.post-meta{ display:flex; gap:12px; color:#4c4c4c; font:8px "DM Mono",monospace; text-transform:uppercase; align-items:center; }
+.category{ color:#aaa; }
+.post h3{ margin-top:14px; font-size:21px; }
+.post p{ margin-top:11px; color:#898989; font-size:12px; line-height:1.75; white-space:pre-wrap; }
+.delete-btn { margin-left: auto; background: none; border: 0; color: #ff7777; font: 8px "DM Mono",monospace; cursor:pointer; text-transform:uppercase; }
+.delete-btn:hover { text-decoration: underline; }
+.empty{ text-align:center; padding:70px 20px; border:1px dashed var(--line); border-radius:18px; color:#555; font:10px "DM Mono",monospace; }
+.footer{ width:min(1180px,92vw); margin:35px auto 0; padding:20px 0 30px; border-top:1px solid var(--line); display:flex; justify-content:space-between; color:#404040; font:8px "DM Mono",monospace; }
+</style>
+</head>
+
+<body>
+
+<!-- LOADING SCREEN -->
+<div class="loader" id="loader">
+  <div class="loader-content">
+    <h1>CIT</h1>
+    <div class="loader-sub">Cloud Synchronized Network</div>
+  </div>
+</div>
+
+<div class="site" id="site">
+  <header class="nav">
+    <a href="#" class="logo" onclick="location.reload()">CIT</a>
+    <div class="nav-right" id="navRight"></div>
+  </header>
+
+  <!-- AUTH PAGE -->
+  <section class="auth" id="authPage">
+    <div class="auth-copy">
+      <div class="mono">CIT CHENNAI / CLOUD BACKED</div>
+      <h2>Say what<br><span>you actually think.</span></h2>
+      <p>Synchronized in real-time across all devices via Supabase cloud database.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="mono">ACCESS</div>
+          <div class="card-title" id="authCardTitle">Welcome back.</div>
+        </div>
+        <div class="mono">● ONLINE</div>
+      </div>
+
+      <div class="tabs">
+        <button class="active" id="loginTab">Login</button>
+        <button id="signupTab">Create account</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="loginForm" class="form active">
+        <div class="field">
+          <label>User ID / Username <input id="loginUser" placeholder="Enter your User ID" required></label>
+        </div>
+        <div class="field">
+          <label>Password
+            <div class="password-box">
+              <input id="loginPassword" type="password" placeholder="Enter password" required>
+              <button class="show-btn" type="button" data-target="loginPassword">Show</button>
+            </div>
+          </label>
+        </div>
+        <div class="form-row">
+          <span></span>
+          <button class="text-button" type="button" id="forgot">Forgot?</button>
+        </div>
+        <button class="primary-btn full" type="submit">Enter the forum</button>
+        <div class="message" id="loginMessage"></div>
+      </form>
+
+      <!-- SIGNUP -->
+      <form id="signupForm" class="form">
+        <div class="field">
+          <label>Choose a User ID <input id="signupUser" placeholder="e.g. student_07" maxlength="24" required></label>
+        </div>
+        <div class="field">
+          <label>Security Question (For password recovery)
+            <select id="signupQuestion">
+              <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+              <option value="In what city were you born?">In what city were you born?</option>
+            </select>
+          </label>
+        </div>
+        <div class="field">
+          <label>Security Answer <input id="signupAnswer" type="text" placeholder="Your secret answer" required></label>
+        </div>
+        <div class="field">
+          <label>Password
+            <div class="password-box">
+              <input id="signupPassword" type="password" placeholder="Create password" required>
+              <button class="show-btn" type="button" data-target="signupPassword">Show</button>
+            </div>
+          </label>
+        </div>
+        <button class="primary-btn full" type="submit" style="margin-top:15px;">Create account</button>
+        <div class="message" id="signupMessage"></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- OWNER DASHBOARD PAGE -->
+  <section class="auth hidden" id="ownerPage" style="grid-template-columns: 1fr; max-width: 600px;">
+    <div class="card" style="margin-top: 40px;">
+      <div class="card-top">
+        <div>
+          <div class="mono">RESTRICTED AREA</div>
+          <div class="card-title">Owner Dashboard</div>
+        </div>
+        <div class="mono" style="color:#ffd700;">● OWNER</div>
+      </div>
+      <p style="color:#888; font-size:12px; margin: 15px 0 25px;">Manage platform moderators. Added usernames instantly receive moderator privileges and delete permissions across all channels.</p>
+      
+      <div class="field">
+        <label>Add Moderator Username <input id="newModInput" placeholder="Enter username to promote"></label>
+      </div>
+      <button class="primary-btn full" id="addModBtn" style="margin-top: 5px;">Grant Moderator Privileges</button>
+      <div class="message" id="ownerMessage"></div>
+
+      <div style="margin-top: 30px; border-top: 1px solid var(--line); padding-top: 20px;">
+        <div class="mono" style="margin-bottom: 12px;">CURRENT MODERATORS:</div>
+        <div id="modListContainer" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+      </div>
+
+      <button class="ghost-btn full" id="backToForumBtn" style="margin-top: 30px;">← Back to Forum</button>
+    </div>
+  </section>
+
+  <!-- FORUM PAGE -->
+  <section class="forum hidden" id="forumPage">
+    <div class="forum-header">
+      <div>
+        <div class="mono">THE COMMUNITY</div>
+        <h2>Welcome,<br><span id="welcomeUser">@student</span></h2>
+      </div>
+      <div class="forum-actions" style="display:flex; gap:10px;">
+        <button class="ghost-btn hidden" id="ownerDashboardBtn" onclick="showOwnerPage()">Owner Panel</button>
+        <button class="ghost-btn" id="refreshBtn">Refresh</button>
+        <button class="primary-btn" id="newPostBtn">New post</button>
+      </div>
+    </div>
+
+    <div class="forum-layout">
+      <aside class="sidebar">
+        <div class="side-title">CHANNELS</div>
+        <button class="channel active" data-category="All">All posts</button>
+        <button class="channel" data-category="Rants">Rants</button>
+        <button class="channel" data-category="Confessions">Confessions</button>
+        <button class="channel" data-category="Questions">Questions</button>
+        <button class="channel" data-category="Campus">Campus</button>
+      </aside>
+
+      <div>
+        <!-- NEW POST COMPOSER -->
+        <div class="new-post hidden" id="newPostBox">
+          <div class="composer-top">
+            <span>NEW POST</span>
+            <button id="closePost" style="background:none;border:0;color:#666;cursor:pointer;">Close</button>
+          </div>
+          <input id="postTitle" maxlength="120" placeholder="Give your post a title">
+          <textarea id="postBody" maxlength="2000" placeholder="What's on your mind?"></textarea>
+          <div class="composer-bottom">
+            <select id="postCategory" style="width:140px;">
+              <option>Rants</option>
+              <option>Confessions</option>
+              <option>Questions</option>
+              <option>Campus</option>
+            </select>
+            <button class="primary-btn" id="publishBtn">Publish post</button>
+          </div>
+          <div class="message" id="postMessage"></div>
+        </div>
+
+        <div id="posts"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>CIT CHENNAI / CLOUD DATABASE</span>
+    <span>NO LIMITS.</span>
+  </footer>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Recover Password</h3>
+      <button class="text-button" id="closeForgot">✕</button>
+    </div>
+
+    <!-- Step 1 -->
+    <div id="forgotStep1">
+      <p class="modal-desc">Enter your User ID to retrieve your security question.</p>
+      <div class="field">
+        <input id="forgotUsernameInput" placeholder="Enter your User ID">
+      </div>
+      <button class="primary-btn full" id="forgotNextBtn" style="margin-top:10px;">Next</button>
+      <div class="message" id="forgotMessage1"></div>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="forgotStep2" class="hidden">
+      <p class="modal-desc">Answer your security question to reveal your password.</p>
+      <div class="field">
+        <label id="forgotQuestionLabel" style="color:#eee; font-size:12px; margin-bottom:12px; font-weight:500;">Question</label>
+        <input id="forgotAnswerInput" placeholder="Your secret answer">
+      </div>
+      <button class="primary-btn full" id="forgotSubmitBtn" style="margin-top:10px;">Reveal Password</button>
+      <div class="message" id="forgotMessage2"></div>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="forgotStep3" class="hidden">
+      <p class="modal-desc">Success! Your password is:</p>
+      <div class="field">
+        <input id="recoveredPasswordInput" type="text" readonly style="color:#8fe0ae; font-weight:600; text-align:center; font-size:16px;">
+      </div>
+      <button class="primary-btn full" id="forgotDoneBtn" style="margin-top:10px;">Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   DB ENGINE + OWNER PANEL + MODERATOR + EMAIL BYPASS
+========================================================= */
+
+// DESIGNATED OWNER USERNAME
+const OWNER_USERNAME = "admin";
+
+// STORAGE HELPERS FOR MODERATORS
+function getModerators() {
+  const mods = localStorage.getItem("cit_moderators");
+  if (!mods) {
+    const initial = ["admin"];
+    localStorage.setItem("cit_moderators", JSON.stringify(initial));
+    return initial;
+  }
+  return JSON.parse(mods);
+}
+
+function addModeratorUser(username) {
+  const mods = getModerators();
+  const clean = username.trim().toLowerCase();
+  if (clean && !mods.includes(clean)) {
+    mods.push(clean);
+    localStorage.setItem("cit_moderators", JSON.stringify(mods));
+    return true;
+  }
+  return false;
+}
+
+function isUserMod(username) {
+  if (!username) return false;
+  return getModerators().includes(username.toLowerCase());
+}
+
+function isUserOwner(username) {
+  if (!username) return false;
+  return username.toLowerCase() === OWNER_USERNAME.toLowerCase();
+}
+
+window.addEventListener("load", async () => {
+  setTimeout(() => {
+    document.getElementById("loader").classList.add("fade-out");
+    document.getElementById("site").classList.add("ready");
+    setTimeout(() => document.getElementById("loader").remove(), 600);
+  }, 600);
+
+  const activeUser = localStorage.getItem("cit_active_user");
+  if (activeUser) {
+    showForum(activeUser);
+  }
+});
+
+function playTransitionLoader(subtitleText, callback) {
+  const loader = document.createElement("div");
+  loader.className = "loader";
+  loader.innerHTML = `
+    <div class="loader-content">
+      <h1>CIT</h1>
+      <div class="loader-sub">${subtitleText}</div>
+    </div>
+  `;
+  document.body.appendChild(loader);
+
+  setTimeout(() => {
+    loader.classList.add("fade-out");
+    setTimeout(() => {
+      loader.remove();
+      callback();
+    }, 600);
+  }, 2500);
+}
+
+function showMessage(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = "message show " + type;
+}
+
+const loginTab = document.getElementById("loginTab");
+const signupTab = document.getElementById("signupTab");
+const loginForm = document.getElementById("loginForm");
+const signupForm = document.getElementById("signupForm");
+
+loginTab.onclick = () => {
+  loginTab.classList.add("active"); signupTab.classList.remove("active");
+  loginForm.classList.add("active"); signupForm.classList.remove("active");
+};
+signupTab.onclick = () => {
+  signupTab.classList.add("active"); loginTab.classList.remove("active");
+  signupForm.classList.add("active"); loginForm.classList.remove("active");
+};
+
+document.querySelectorAll(".show-btn").forEach(btn => {
+  btn.onclick = () => {
+    const input = document.getElementById(btn.dataset.target);
+    input.type = input.type === "password" ? "text" : "password";
+    btn.textContent = input.type === "password" ? "Show" : "Hide";
+  };
+});
+
+// SIGNUP WITH UNTRACEABLE DUMMY EMAIL
+signupForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("signupUser").value.trim().toLowerCase();
+  const question = document.getElementById("signupQuestion").value;
+  const answer = document.getElementById("signupAnswer").value.trim().toLowerCase();
+  const password = document.getElementById("signupPassword").value;
+
+  if(!/^[a-z0-9_.-]{3,24}$/.test(username)){
+    showMessage("signupMessage", "User ID must be 3-24 alphanumeric characters.", "error");
+    return;
+  }
+  if(password.length < 6) {
+    showMessage("signupMessage", "Password must be at least 6 characters.", "error");
+    return;
+  }
+
+  // Untraceable dummy email to bypass Supabase's strict parser without leaking info
+  const dummyEmail = `${username}@void-network.net`;
+
+  const { data, error } = await db.auth.signUp({
+    email: dummyEmail,
+    password: password
+  });
+
+  if (error) {
+    showMessage("signupMessage", "User ID taken or invalid.", "error");
+    return;
+  }
+
+  const { error: secError } = await db.from("user_security").insert([
+    { username: username, question: question, answer: answer, password_hint: password }
+  ]);
+
+  playTransitionLoader("Creating Account & Security Vault...", async () => {
+    await loginUserDirect(username, password);
+  });
+};
+
+// LOGIN
+loginForm.onsubmit = async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("loginUser").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value;
+  
+  playTransitionLoader("Authenticating Credentials...", async () => {
+    await loginUserDirect(username, password);
+  });
+};
+
+async function loginUserDirect(username, password) {
+  const dummyEmail = `${username}@void-network.net`;
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email: dummyEmail,
+    password: password
+  });
+
+  if (error) {
+    showMessage("loginMessage", "Wrong User ID or password.", "error");
+  } else {
+    localStorage.setItem("cit_active_user", username);
+    showForum(username);
+  }
+}
+
+async function logoutUser() {
+  await db.auth.signOut();
+  localStorage.removeItem("cit_active_user");
+  location.reload();
+}
+
+// FORGOT PASSWORD MODAL LOGIC
+const forgotModal = document.getElementById("forgotModal");
+const forgotStep1 = document.getElementById("forgotStep1");
+const forgotStep2 = document.getElementById("forgotStep2");
+const forgotStep3 = document.getElementById("forgotStep3");
+let recoveredUserObj = null;
+
+document.getElementById("forgot").onclick = () => {
+  forgotModal.classList.remove("hidden");
+  forgotStep1.classList.remove("hidden");
+  forgotStep2.classList.add("hidden");
+  forgotStep3.classList.add("hidden");
+  document.getElementById("forgotUsernameInput").value = "";
+  document.getElementById("forgotAnswerInput").value = "";
+  recoveredUserObj = null;
+};
+
+document.getElementById("closeForgot").onclick = () => forgotModal.classList.add("hidden");
+document.getElementById("forgotDoneBtn").onclick = () => forgotModal.classList.add("hidden");
+
+document.getElementById("forgotNextBtn").onclick = async () => {
+  const username = document.getElementById("forgotUsernameInput").value.trim().toLowerCase();
+  if(!username) return;
+
+  const { data, error } = await db.from("user_security").select("*").eq("username", username).single();
+
+  if(error || !data) {
+    showMessage("forgotMessage1", "User ID not found.", "error");
+    return;
+  }
+
+  recoveredUserObj = data;
+  document.getElementById("forgotQuestionLabel").textContent = data.question;
+  forgotStep1.classList.add("hidden");
+  forgotStep2.classList.remove("hidden");
+};
+
+document.getElementById("forgotSubmitBtn").onclick = () => {
+  const answer = document.getElementById("forgotAnswerInput").value.trim().toLowerCase();
+  if(!answer) return;
+
+  if(answer === recoveredUserObj.answer) {
+    document.getElementById("recoveredPasswordInput").value = recoveredUserObj.password_hint;
+    forgotStep2.classList.add("hidden");
+    forgotStep3.classList.remove("hidden");
+  } else {
+    showMessage("forgotMessage2", "Incorrect security answer.", "error");
+  }
+};
+
+// FORUM LOGIC & OWNER PANEL
+let activeUsername = null;
+let selectedCategory = "All";
+
+function showForum(username) {
+  activeUsername = username;
+  document.getElementById("authPage").classList.add("hidden");
+  document.getElementById("ownerPage").classList.add("hidden");
+  document.getElementById("forumPage").classList.remove("hidden");
+
+  const isOwner = isUserOwner(username);
+  const isMod = isUserMod(username);
+  
+  let badgeHTML = "";
+  if (isOwner) badgeHTML = `<span class="owner-badge">OWNER</span>`;
+  else if (isMod) badgeHTML = `<span class="mod-badge">MOD</span>`;
+
+  document.getElementById("welcomeUser").innerHTML = `@${escapeHTML(username)} ${badgeHTML}`;
+  document.getElementById("navRight").innerHTML = `
+    <span class="nav-user">@${escapeHTML(username)} ${badgeHTML}</span>
+    <button class="small-btn" onclick="logoutUser()">Log out</button>
+  `;
+
+  if (isOwner) {
+    document.getElementById("ownerDashboardBtn").classList.remove("hidden");
+  } else {
+    document.getElementById("ownerDashboardBtn").classList.add("hidden");
+  }
+
+  loadPosts();
+}
+
+function showOwnerPage() {
+  document.getElementById("authPage").classList.add("hidden");
+  document.getElementById("forumPage").classList.add("hidden");
+  document.getElementById("ownerPage").classList.remove("hidden");
+  renderOwnerModList();
+}
+
+document.getElementById("backToForumBtn").onclick = () => {
+  document.getElementById("ownerPage").classList.add("hidden");
+  showForum(activeUsername);
+};
+
+document.getElementById("addModBtn").onclick = () => {
+  const newMod = document.getElementById("newModInput").value.trim();
+  if (!newMod) return;
+
+  const added = addModeratorUser(newMod);
+  if (added) {
+    showMessage("ownerMessage", `@${newMod} has been granted Moderator privileges!`, "success");
+    document.getElementById("newModInput").value = "";
+    renderOwnerModList();
+  } else {
+    showMessage("ownerMessage", "Moderator already exists or invalid username.", "error");
+  }
+};
+
+function renderOwnerModList() {
+  const container = document.getElementById("modListContainer");
+  const mods = getModerators();
+  container.innerHTML = mods.map(m => `
+    <span style="background:var(--card2); border:1px solid var(--line); padding:6px 12px; border-radius:8px; font:10px 'DM Mono',monospace; color:#ccc;">
+      @${escapeHTML(m)} ${m === OWNER_USERNAME ? '(Owner)' : ''}
+    </span>
+  `).join("");
+}
+
+async function loadPosts() {
+  const container = document.getElementById("posts");
+  container.innerHTML = `<div class="empty">Loading cloud feed...</div>`;
+
+  let query = db.from("public_posts_view").select("*").order("created_at", { ascending: false });
+
+  if (selectedCategory !== "All") {
+    query = query.eq("category", selectedCategory);
+  }
+
+  const { data: posts, error } = await query;
+
+  if (error) {
+    container.innerHTML = `<div class="empty">Error loading feed. Check table permissions.</div>`;
+    return;
+  }
+
+  if (!posts || posts.length === 0) {
+    container.innerHTML = `<div class="empty">No posts here yet.</div>`;
+    return;
+  }
+
+  const isMod = isUserMod(activeUsername);
+
+  container.innerHTML = posts.map(post => {
+    const authorOwner = isUserOwner(post.anonymous_name);
+    const authorIsMod = isUserMod(post.anonymous_name);
+    
+    let authorBadge = "";
+    if (authorOwner) authorBadge = `<span class="owner-badge">OWNER</span>`;
+    else if (authorIsMod) authorBadge = `<span class="mod-badge">MOD</span>`;
+
+    const canDelete = isMod || (activeUsername && post.anonymous_name.toLowerCase() === activeUsername.toLowerCase());
+    
+    return `
+      <article class="post">
+        <div class="post-meta">
+          <span class="category">${escapeHTML(post.category)}</span>
+          <span>@${escapeHTML(post.anonymous_name)} ${authorBadge}</span>
+          <span>${new Date(post.created_at).toLocaleString()}</span>
+          ${canDelete ? `<button class="delete-btn" onclick="deletePost(${post.id})">Delete</button>` : ``}
+        </div>
+        <h3>${escapeHTML(post.title)}</h3>
+        <p>${escapeHTML(post.body)}</p>
+      </article>
+    `;
+  }).join("");
+}
+
+window.deletePost = async function(id) {
+  const { error } = await db.from('posts').delete().eq('id', id);
+  if (!error) {
+    loadPosts();
+  }
+}
+
+document.getElementById("newPostBtn").onclick = () => document.getElementById("newPostBox").classList.remove("hidden");
+document.getElementById("closePost").onclick = () => document.getElementById("newPostBox").classList.add("hidden");
+document.getElementById("refreshBtn").onclick = loadPosts;
+
+document.querySelectorAll(".channel").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".channel").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedCategory = btn.dataset.category;
+    loadPosts();
+  };
+});
+
+document.getElementById("publishBtn").onclick = async () => {
+  const title = document.getElementById("postTitle").value.trim();
+  const body = document.getElementById("postBody").value.trim();
+  const category = document.getElementById("postCategory").value;
+  const msgEl = document.getElementById("postMessage");
+
+  if (title.length < 3 || body.length < 1) {
+    msgEl.textContent = "Please provide a title and body.";
+    msgEl.className = "message show error";
+    return;
+  }
+
+  const { data: { session } } = await db.auth.getSession();
+  if(!session) return;
+
+  const { error } = await db.from("posts").insert([
+    {
+      user_id: session.user.id,
+      anonymous_name: activeUsername,
+      category: category,
+      title: title,
+      body: body
+    }
+  ]);
+
+  if (error) {
+    msgEl.textContent = error.message;
+    msgEl.className = "message show error";
+  } else {
+    document.getElementById("postTitle").value = "";
+    document.getElementById("postBody").value = "";
+    document.getElementById("newPostBox").classList.add("hidden");
+    loadPosts();
+  }
+};
+
+function escapeHTML(text) {
+  return String(text).replace(/[&<>"']/g, char => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+  }[char]));
+}
+</script>
+
+</body>
+</html>
