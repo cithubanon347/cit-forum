@@ -62,7 +62,9 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 .card-top{ display:flex; justify-content:space-between; gap:20px; }
 .card-title{ margin-top:8px; font-size:27px; letter-spacing:-.035em; }
 
-.tabs{ display:grid; grid-template-columns:1fr 1fr; padding:4px; margin:25px 0; background:#080808; border:1px solid var(--line); border-radius:11px; gap:4px; }
+.opsec-warning{ background:rgba(255,119,119,0.08); border:1px solid rgba(255,119,119,0.2); border-radius:10px; padding:12px; margin:15px 0 20px; font-size:10px; color:#ff9999; line-height:1.5; font-family:"DM Mono",monospace; }
+
+.tabs{ display:grid; grid-template-columns:1fr 1fr; padding:4px; margin:20px 0; background:#080808; border:1px solid var(--line); border-radius:11px; gap:4px; }
 .tabs button{ border:0; background:transparent; color:#5d5d5d; padding:11px; border-radius:8px; font-size:10px; transition:0.2s; }
 .tabs button.active{ background:#1a1a1a; color:#eee; }
 
@@ -87,12 +89,16 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 .message.error{ color:#ff7777; }
 .message.success{ color:#8fe0ae; }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s ease; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-card { background: #0d0d0d; border: 1px solid var(--line); border-radius: 22px; width: min(420px, 92vw); box-shadow: 0 40px 90px rgba(0,0,0,0.6); padding: 30px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
-.modal-header h3 { font-size: 16px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
-.modal-desc { font-size: 12px; color: #888; margin-bottom: 20px; line-height: 1.6; }
+.modal-card { background: #0d0d0d; border: 1px solid var(--line); border-radius: 22px; width: min(540px, 92vw); box-shadow: 0 40px 90px rgba(0,0,0,0.7); padding: 30px; max-height: 85vh; display: flex; flex-direction: column; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+.modal-header h3 { font-size: 15px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.modal-desc { font-size: 11px; color: #888; margin-bottom: 15px; line-height: 1.6; }
+
+.tc-list { overflow-y: auto; max-height: 280px; padding-right: 8px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; }
+.tc-item { font-size: 11px; color: #aaa; line-height: 1.5; background: #090909; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); }
+.tc-item strong { color: #eee; font-family: "DM Mono", monospace; font-size: 10px; display: block; margin-bottom: 3px; }
 
 .forum{ width:min(1180px,92vw); margin:auto; padding:70px 0 30px; }
 .forum-header{ display:flex; justify-content:space-between; align-items:end; padding-bottom:36px; border-bottom:1px solid var(--line); }
@@ -126,7 +132,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 <div class="loader" id="loader">
   <div class="loader-content">
     <h1>CIT</h1>
-    <div class="loader-sub">Cloud Synchronized Network</div>
+    <div class="loader-sub">Autonomous Student Network</div>
   </div>
 </div>
 
@@ -138,9 +144,9 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 
   <section class="auth" id="authPage">
     <div class="auth-copy">
-      <div class="mono">CIT CHENNAI / CLOUD BACKED</div>
+      <div class="mono">CIT CHENNAI / SECURE PORTAL</div>
       <h2>Say what<br><span>you actually think.</span></h2>
-      <p>Synchronized in real-time across all devices via Supabase cloud database.</p>
+      <p>An independent, community-driven communication channel built for uninhibited academic and campus discourse.</p>
     </div>
 
     <div class="card">
@@ -149,7 +155,11 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
           <div class="mono">ACCESS</div>
           <div class="card-title" id="authCardTitle">Welcome back.</div>
         </div>
-        <div class="mono">● ONLINE</div>
+        <div class="mono">● ENCRYPTED</div>
+      </div>
+
+      <div class="opsec-warning">
+        ⚠️ OPSEC NOTICE: Never use your legal name, roll number, official email handle, or any public moniker tied to your real identity. Protect your anonymity.
       </div>
 
       <div class="tabs">
@@ -182,11 +192,15 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
           <label>Choose a User ID <input id="signupUser" placeholder="e.g. student_07" maxlength="24" required></label>
         </div>
         <div class="field">
-          <label>Security Question (For password recovery)
+          <label>Security Question (Identity Vault)
             <select id="signupQuestion">
-              <option value="What was the name of your first pet?">What was the name of your first pet?</option>
-              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-              <option value="In what city were you born?">In what city were you born?</option>
+              <option value="What was the exact codename of your first personal project?">What was the exact codename of your first personal project?</option>
+              <option value="What is the model of your very first graphics card or phone?">What is the model of your very first graphics card or phone?</option>
+              <option value="What was the name of your first virtual pet or offline game character?">What was the name of your first virtual pet or offline game character?</option>
+              <option value="What exact phrase is hidden in your primary password manager hint?">What exact phrase is hidden in your primary password manager hint?</option>
+              <option value="What was your favorite hidden spot outside campus during first year?">What was your favorite hidden spot outside campus during first year?</option>
+              <option value="What specific custom command do you always type first in a new terminal?">What specific custom command do you always type first in a new terminal?</option>
+              <option value="What was the exact model name of your first childhood bicycle?">What was the exact model name of your first childhood bicycle?</option>
             </select>
           </label>
         </div>
@@ -264,6 +278,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
           </div>
           <input id="postTitle" maxlength="120" placeholder="Give your post a title">
           <textarea id="postBody" maxlength="2000" placeholder="What's on your mind?"></textarea>
+          
           <div class="composer-bottom">
             <select id="postCategory" style="width:140px;">
               <option>Rants</option>
@@ -282,13 +297,75 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
   </section>
 
   <footer class="footer">
-    <span>CIT CHENNAI / CLOUD DATABASE</span>
-    <span>NO LIMITS.</span>
+    <span>CIT CHENNAI / INDEPENDENT NETWORK</span>
+    <span>ZERO TRACE PROTOCOL.</span>
   </footer>
 </div>
 
-<div id="forgotModal" class="modal-overlay hidden">
+<!-- TERMS & CONDITIONS MODAL -->
+<div id="tcModal" class="modal-overlay hidden">
   <div class="modal-card">
+    <div class="modal-header">
+      <h3>Community Protocol & Terms</h3>
+      <button class="text-button" id="closeTc">✕</button>
+    </div>
+    <p class="modal-desc">Before entering or establishing your profile, you must review and agree to the platform guidelines:</p>
+    
+    <div class="tc-list">
+      <div class="tc-item">
+        <strong>1. Truth & Accountability</strong>
+        Absolute expression autonomy does not grant immunity from facts; spreading deliberate false information or defamatory rumors is strictly forbidden.
+      </div>
+      <div class="tc-item">
+        <strong>2. No Baseless Gossip</strong>
+        Targeted gossip, harassment, or malicious call-outs directed at individuals or external student groups without valid context will result in immediate removal of the post.
+      </div>
+      <div class="tc-item">
+        <strong>3. Liability Waiver & Security</strong>
+        In the hypothetical event of an institutional or administrative breach, the website creator holds zero legal liability or responsibility. Architecture is designed to secure your identity unless compromised by your own handle choices.
+      </div>
+      <div class="tc-item">
+        <strong>4. Strict Pseudonymity Mandate</strong>
+        Never utilize your legal name, registration number, college email handle, or standard social aliases tied to your real identity.
+      </div>
+      <div class="tc-item">
+        <strong>5. Zero Doxxing Policy</strong>
+        Publishing private phone numbers, personal photographs, confidential academic records, or leaked screenshots of private chats will result in an instant permanent ban.
+      </div>
+      <div class="tc-item">
+        <strong>6. Spam & Automation Control</strong>
+        Flooding discussion channels with repetitive text payloads, bot scripts, or external commercial ads is prohibited.
+      </div>
+      <div class="tc-item">
+        <strong>7. Executive Moderation Authority</strong>
+        Platform moderators and administrators reserve full authority to purge violating posts, lock threads, or revoke user access at discretion.
+      </div>
+      <div class="tc-item">
+        <strong>8. Credential Ownership</strong>
+        You are solely responsible for saving your security question answers and password. Lost credentials cannot be manually recovered by administrators.
+      </div>
+      <div class="tc-item">
+        <strong>9. External Link Restrictions</strong>
+        Posting malicious IP loggers, malware links, or unauthorized external redirects will trigger immediate content removal.
+      </div>
+      <div class="tc-item">
+        <strong>10. Autonomous Status</strong>
+        This platform is an independent unofficial student sanctuary operating strictly outside official college administration oversight.
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px; font-size:11px; color:#ccc;">
+      <input type="checkbox" id="tcAgree" style="width:16px; height:16px; accent-color:#eee; cursor:pointer;">
+      <label for="tcAgree" style="cursor:pointer;">I have read, understood, and agree to abide by all protocol guidelines.</label>
+    </div>
+
+    <button class="primary-btn full" id="tcProceedBtn">Acknowledge & Proceed</button>
+  </div>
+</div>
+
+<!-- PASSWORD RECOVERY MODAL -->
+<div id="forgotModal" class="modal-overlay hidden">
+  <div class="modal-card" style="width:min(420px, 92vw);">
     <div class="modal-header">
       <h3>Recover Password</h3>
       <button class="text-button" id="closeForgot">✕</button>
@@ -325,6 +402,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 
 <script>
 const OWNER_USERNAME = "admin";
+let pendingAuthAction = null;
 
 function getModerators() {
   const mods = localStorage.getItem("cit_moderators");
@@ -418,11 +496,9 @@ document.querySelectorAll(".show-btn").forEach(btn => {
   };
 });
 
-signupForm.onsubmit = async (e) => {
+signupForm.onsubmit = (e) => {
   e.preventDefault();
   const username = document.getElementById("signupUser").value.trim().toLowerCase();
-  const question = document.getElementById("signupQuestion").value;
-  const answer = document.getElementById("signupAnswer").value.trim().toLowerCase();
   const password = document.getElementById("signupPassword").value;
 
   if(!/^[a-z0-9_.-]{3,24}$/.test(username)){
@@ -434,6 +510,43 @@ signupForm.onsubmit = async (e) => {
     return;
   }
 
+  pendingAuthAction = executeSignup;
+  openTcModal();
+};
+
+loginForm.onsubmit = (e) => {
+  e.preventDefault();
+  pendingAuthAction = executeLogin;
+  openTcModal();
+};
+
+function openTcModal() {
+  document.getElementById("tcAgree").checked = false;
+  document.getElementById("tcModal").classList.remove("hidden");
+}
+
+document.getElementById("closeTc").onclick = () => {
+  document.getElementById("tcModal").classList.add("hidden");
+};
+
+document.getElementById("tcProceedBtn").onclick = () => {
+  if (!document.getElementById("tcAgree").checked) {
+    alert("You must agree to the protocol terms to proceed.");
+    return;
+  }
+  document.getElementById("tcModal").classList.add("hidden");
+  if (pendingAuthAction) {
+    pendingAuthAction();
+    pendingAuthAction = null;
+  }
+};
+
+async function executeSignup() {
+  const username = document.getElementById("signupUser").value.trim().toLowerCase();
+  const question = document.getElementById("signupQuestion").value;
+  const answer = document.getElementById("signupAnswer").value.trim().toLowerCase();
+  const password = document.getElementById("signupPassword").value;
+
   const dummyEmail = `${username}@void-network.net`;
 
   const { data, error } = await db.auth.signUp({
@@ -442,7 +555,7 @@ signupForm.onsubmit = async (e) => {
   });
 
   if (error) {
-    showMessage("signupMessage", "User ID taken or invalid.", "error");
+    showMessage("signupMessage", "User ID already taken or invalid.", "error");
     return;
   }
 
@@ -450,20 +563,19 @@ signupForm.onsubmit = async (e) => {
     { username: username, question: question, answer: answer, password_hint: password }
   ]);
 
-  playTransitionLoader("Creating Account & Security Vault...", async () => {
+  playTransitionLoader("Establishing Secure Vault...", async () => {
     await loginUserDirect(username, password);
   });
-};
+}
 
-loginForm.onsubmit = async (e) => {
-  e.preventDefault();
+async function executeLogin() {
   const username = document.getElementById("loginUser").value.trim().toLowerCase();
   const password = document.getElementById("loginPassword").value;
   
   playTransitionLoader("Authenticating Credentials...", async () => {
     await loginUserDirect(username, password);
   });
-};
+}
 
 async function loginUserDirect(username, password) {
   const dummyEmail = `${username}@void-network.net`;
@@ -605,7 +717,7 @@ function renderOwnerModList() {
 
 async function loadPosts() {
   const container = document.getElementById("posts");
-  container.innerHTML = `<div class="empty">Loading cloud feed...</div>`;
+  container.innerHTML = `<div class="empty">Loading secure feed...</div>`;
 
   let query = db.from("public_posts_view").select("*").order("created_at", { ascending: false });
 
@@ -652,7 +764,6 @@ async function loadPosts() {
   }).join("");
 }
 
-// SAFE EVENT DELEGATION FOR DELETION (Eliminates syntax errors)
 document.getElementById("posts").onclick = async (e) => {
   const btn = e.target.closest("[data-delete-id]");
   if (!btn) return;
