@@ -60,6 +60,9 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 .small-btn:hover,.ghost-btn:hover{ background:rgba(255,255,255,0.05); color:#fff; }
 .primary-btn{ background:#eee; color:#050505; border:1px solid #eee; }
 .primary-btn:hover{ transform:translateY(-1px); filter:brightness(1.1); }
+.live-status{ display:inline-flex; align-items:center; gap:6px; padding:9px 10px; border:1px solid var(--line); border-radius:10px; color:#777; font:8px "DM Mono",monospace; letter-spacing:.1em; text-transform:uppercase; }
+.live-status .dot{ width:6px; height:6px; border-radius:50%; background:#8fe0ae; box-shadow:0 0 10px rgba(143,224,174,.5); animation:livePulse 1.8s ease-in-out infinite; }
+@keyframes livePulse{ 0%,100%{opacity:.45;transform:scale(.9)} 50%{opacity:1;transform:scale(1)} }
 .hidden{ display:none!important; }
 
 .auth{ width:min(1100px,92vw); margin:auto; min-height:calc(100vh - 82px); display:grid; grid-template-columns:1fr 420px; gap:80px; align-items:center; }
@@ -334,6 +337,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
       </div>
       <div class="forum-actions" style="display:flex; gap:10px;">
         <button class="ghost-btn hidden" id="ownerDashboardBtn" onclick="showOwnerPage()">Owner Panel</button>
+        <span class="live-status" id="liveFeedStatus"><span class="dot"></span> Live</span>
         <button class="ghost-btn" id="refreshBtn">Refresh</button>
         <button class="primary-btn" id="newPostBtn">New post</button>
       </div>
@@ -813,6 +817,7 @@ async function loginUserDirect(username, password) {
 }
 
 async function logoutUser() {
+  stopFeedAutoRefresh();
   await db.auth.signOut();
   localStorage.removeItem("cit_active_user");
   location.reload();
@@ -869,6 +874,9 @@ document.getElementById("forgotSubmitBtn").onclick = () => {
 
 let activeUsername = null;
 let selectedCategory = "All";
+let feedAutoRefreshTimer = null;
+let feedRefreshInFlight = false;
+let lastFeedSignature = "";
 
 async function showForum(username) {
   activeUsername = username;
@@ -895,8 +903,9 @@ async function showForum(username) {
     document.getElementById("ownerDashboardBtn").classList.add("hidden");
   }
 
-  await loadPosts();
+  await loadPosts(false, true);
   await checkForDeletedPosts();
+  startFeedAutoRefresh();
 }
 
 async function showOwnerPage() {
@@ -1058,56 +1067,100 @@ async function checkForDeletedPosts() {
   });
 }
 
-async function loadPosts() {
+async function loadPosts(silent = false, force = false) {
+  if (feedRefreshInFlight) return;
+  feedRefreshInFlight = true;
+
   const container = document.getElementById("posts");
-  container.innerHTML = `<div class="empty">Loading secure feed...</div>`;
+  const wasShowingPosts = container.children.length > 0 && !container.querySelector(".empty")?.textContent?.includes("Loading");
 
-  let query = db.from("public_posts_view").select("*").order("created_at", { ascending: false });
-
-  if (selectedCategory !== "All") {
-    query = query.eq("category", selectedCategory);
+  if (!silent) {
+    container.innerHTML = `<div class="empty">Loading secure feed...</div>`;
   }
 
-  const { data: posts, error } = await query;
+  try {
+    let query = db.from("public_posts_view").select("*").order("created_at", { ascending: false });
 
-  if (error) {
-    container.innerHTML = `<div class="empty">Error loading feed. Check table permissions.</div>`;
-    return;
+    if (selectedCategory !== "All") {
+      query = query.eq("category", selectedCategory);
+    }
+
+    const { data: posts, error } = await query;
+
+    if (error) {
+      console.warn("Feed refresh failed:", error);
+      if (!silent || !wasShowingPosts) {
+        container.innerHTML = `<div class="empty">Error loading feed. Check table permissions.</div>`;
+      }
+      return;
+    }
+
+    const safePosts = posts || [];
+    const signature = safePosts.map(post =>
+      `${post.id}|${post.created_at}|${post.title}|${post.body}|${post.category}|${post.anonymous_name}`
+    ).join("||");
+
+    // Automatic refreshes only touch the DOM when something actually changed.
+    // This prevents flicker every few seconds.
+    if (!force && silent && signature === lastFeedSignature) return;
+    lastFeedSignature = signature;
+
+    if (safePosts.length === 0) {
+      container.innerHTML = `<div class="empty">No posts here yet.</div>`;
+      return;
+    }
+
+    const mods = await getModerators();
+    const activeName = String(activeUsername || "").toLowerCase();
+    const isMod = mods.includes(activeName);
+
+    container.innerHTML = safePosts.map(post => {
+      const authorName = String(post.anonymous_name || "").toLowerCase();
+      const authorOwner = isUserOwner(authorName);
+      const authorIsMod = mods.includes(authorName);
+
+      let authorBadge = "";
+      if (authorOwner) authorBadge = `<span class="owner-badge">OWNER</span>`;
+      else if (authorIsMod) authorBadge = `<span class="mod-badge">MOD</span>`;
+
+      const canDelete = isMod || (activeUsername && authorName === activeName);
+
+      return `
+        <article class="post" data-id="${escapeHTML(post.id)}">
+          <div class="post-meta">
+            <span class="category">${escapeHTML(post.category)}</span>
+            <span>@${escapeHTML(post.anonymous_name)} ${authorBadge}</span>
+            <span>${new Date(post.created_at).toLocaleString()}</span>
+            ${canDelete ? `<button class="delete-btn" data-delete-id="${escapeHTML(post.id)}">Delete</button>` : ``}
+          </div>
+          <h3>${escapeHTML(post.title)}</h3>
+          <p>${escapeHTML(post.body)}</p>
+        </article>
+      `;
+    }).join("");
+  } finally {
+    feedRefreshInFlight = false;
   }
+}
 
-  if (!posts || posts.length === 0) {
-    container.innerHTML = `<div class="empty">No posts here yet.</div>`;
-    return;
+function startFeedAutoRefresh() {
+  if (feedAutoRefreshTimer) return;
+
+  // Polling is used instead of requiring another Supabase Realtime setup.
+  // This works with the current no-RLS database configuration.
+  feedAutoRefreshTimer = setInterval(async () => {
+    if (!activeUsername) return;
+    if (document.getElementById("forumPage")?.classList.contains("hidden")) return;
+    if (document.visibilityState !== "visible") return;
+    await loadPosts(true, false);
+  }, 3000);
+}
+
+function stopFeedAutoRefresh() {
+  if (feedAutoRefreshTimer) {
+    clearInterval(feedAutoRefreshTimer);
+    feedAutoRefreshTimer = null;
   }
-
-  const mods = await getModerators();
-  const activeName = String(activeUsername || "").toLowerCase();
-  const isMod = mods.includes(activeName);
-
-  container.innerHTML = posts.map(post => {
-    const authorName = String(post.anonymous_name || "").toLowerCase();
-    const authorOwner = isUserOwner(authorName);
-    const authorIsMod = mods.includes(authorName);
-
-    let authorBadge = "";
-    if (authorOwner) authorBadge = `<span class="owner-badge">OWNER</span>`;
-    else if (authorIsMod) authorBadge = `<span class="mod-badge">MOD</span>`;
-
-    const canDelete = isMod || (activeUsername && authorName === activeName);
-
-    return `
-      <article class="post" data-id="${escapeHTML(post.id)}">
-        <div class="post-meta">
-          <span class="category">${escapeHTML(post.category)}</span>
-          <span>@${escapeHTML(post.anonymous_name)} ${authorBadge}</span>
-          <span>${new Date(post.created_at).toLocaleString()}</span>
-          ${canDelete ? `<button class="delete-btn" data-delete-id="${escapeHTML(post.id)}">Delete</button>` : ``}
-        </div>
-        <h3>${escapeHTML(post.title)}</h3>
-        <p>${escapeHTML(post.body)}</p>
-      </article>
-    `;
-  }).join("");
 }
 
 document.getElementById("posts").onclick = async (e) => {
@@ -1167,19 +1220,20 @@ document.getElementById("posts").onclick = async (e) => {
     });
   }
 
-  await loadPosts();
+  await loadPosts(false, true);
 };
 
 document.getElementById("newPostBtn").onclick = () => document.getElementById("newPostBox").classList.remove("hidden");
 document.getElementById("closePost").onclick = () => document.getElementById("newPostBox").classList.add("hidden");
-document.getElementById("refreshBtn").onclick = loadPosts;
+document.getElementById("refreshBtn").onclick = () => loadPosts(false, true);
 
 document.querySelectorAll(".channel").forEach(btn => {
   btn.onclick = () => {
     document.querySelectorAll(".channel").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     selectedCategory = btn.dataset.category;
-    loadPosts();
+    lastFeedSignature = "";
+    loadPosts(false, true);
   };
 });
 
