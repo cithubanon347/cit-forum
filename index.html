@@ -16,7 +16,7 @@
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
 
 *{box-sizing:border-box;margin:0;padding:0}
 
@@ -30,6 +30,16 @@ body{overflow-x:hidden}
 .loader{ position:fixed; inset:0; background:#050505; display:flex; align-items:center; justify-content:center; z-index:100; opacity:1; transition:opacity 0.6s ease; }
 .loader.fade-out{ opacity:0; visibility:hidden; }
 .loader-content{ width:min(760px,85vw); text-align:center; }
+.loader-brand{display:flex;flex-direction:column;align-items:center;gap:12px}
+.loader-brand h1{font-size:clamp(42px,7vw,92px);line-height:.9;letter-spacing:-.045em;font-weight:600;margin:0}
+.loader-version{font:10px "DM Mono",monospace;letter-spacing:.28em;color:#666;text-transform:uppercase}
+.loader-enter{margin-top:42px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.2);background:#ededed;color:#050505;border-radius:11px;padding:14px 28px;font:600 10px Inter,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;transition:transform .25s ease,box-shadow .25s ease,background .25s ease;box-shadow:0 0 0 rgba(255,255,255,0)}
+.loader-enter::before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.75) 50%,transparent 75%);transform:translateX(-120%);transition:transform .6s ease}
+.loader-enter:hover{transform:translateY(-2px);box-shadow:0 12px 34px rgba(0,0,0,.35);background:#fff}
+.loader-enter:hover::before{transform:translateX(120%)}
+.loader-enter:active{transform:translateY(0) scale(.98)}
+.loader-enter:focus-visible{outline:2px solid #aaa;outline-offset:4px}
+.loader-hint{margin-top:15px;font:8px "DM Mono",monospace;letter-spacing:.14em;color:#444;text-transform:uppercase}
 .loader-content h1{ font-size:clamp(52px,10vw,126px); line-height:.9; letter-spacing:.17em; font-weight:600; animation: pulseLoader 1.5s ease-in-out infinite; }
 @keyframes pulseLoader { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 .loader-sub{ margin-top:28px; font-size:13px; letter-spacing:.42em; color:#8b8b8b; text-transform:uppercase; }
@@ -118,24 +128,31 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Post removal animation */
-.deletion-overlay{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .18s ease}
+.deletion-overlay{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.86);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .28s ease}
 .deletion-overlay.show{opacity:1;pointer-events:auto}
-.deletion-card{width:min(620px,90vw);background:#090909;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px;box-shadow:0 30px 100px rgba(0,0,0,.7);transform:translateY(20px) scale(.97);opacity:0}
-.deletion-overlay.show .deletion-card{animation:deletionCard .7s cubic-bezier(.2,.8,.2,1) forwards}
+.deletion-card{width:min(660px,90vw);background:#090909;border:1px solid rgba(255,119,119,.24);border-radius:18px;padding:28px;box-shadow:0 30px 120px rgba(0,0,0,.82),0 0 60px rgba(255,70,70,.08);transform:translateY(28px) scale(.94);opacity:0}
+.deletion-overlay.show .deletion-card{animation:deletionCard 2.2s cubic-bezier(.2,.8,.2,1) forwards}
 .deletion-kicker{font:9px "DM Mono",monospace;letter-spacing:.18em;color:#ff7777;text-transform:uppercase;margin-bottom:14px}
 .deletion-title{font-size:clamp(24px,4vw,42px);letter-spacing:-.04em;line-height:1.02;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .deletion-meta{margin-top:10px;color:#666;font:9px "DM Mono",monospace;text-transform:uppercase}
-.deletion-line{height:1px;background:#222;margin-top:24px;transform-origin:left;animation:deletionLine .9s ease .15s forwards;transform:scaleX(0)}
-.deletion-stamp{margin-top:18px;color:#777;font:10px "DM Mono",monospace;opacity:0;animation:deletionStamp .35s ease .55s forwards}
+.deletion-line{height:1px;background:#222;margin-top:24px;transform-origin:left;animation:deletionLine 1.45s ease .35s forwards;transform:scaleX(0)}
+.deletion-stamp{margin-top:18px;color:#777;font:10px "DM Mono",monospace;opacity:0;animation:deletionStamp .5s ease 1.25s forwards}
+.deletion-ok{display:block;margin:24px 0 0 auto;min-width:110px;padding:11px 18px;border:1px solid rgba(255,255,255,.18);border-radius:9px;background:#eee;color:#050505;font:600 9px Inter,Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .35s ease,transform .35s ease,filter .2s ease}
+.deletion-ok.ready{opacity:1;transform:translateY(0);pointer-events:auto}
+.deletion-ok:hover{filter:brightness(1.08)}
 @keyframes deletionCard{
-  0%{transform:translateY(20px) scale(.97);opacity:0;filter:blur(5px)}
-  18%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
-  52%{transform:translateX(0) skewX(0);opacity:1}
-  58%{transform:translateX(-7px) skewX(-1deg);opacity:.92}
-  63%{transform:translateX(8px) skewX(1deg);opacity:1}
-  69%{transform:translateX(-3px) skewX(0);opacity:.88}
-  78%{transform:translateY(-3px) scale(1.015);opacity:.55;filter:blur(.4px)}
-  100%{transform:translateY(-34px) scale(.82);opacity:0;filter:blur(7px)}
+  0%{transform:translateY(28px) scale(.94);opacity:0;filter:blur(7px)}
+  12%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
+  25%{transform:translateX(0) skewX(0);opacity:1}
+  31%{transform:translateX(-11px) skewX(-1.5deg);opacity:.92}
+  36%{transform:translateX(13px) skewX(1.8deg);opacity:1}
+  42%{transform:translateX(-7px) skewX(-.8deg);opacity:.86}
+  48%{transform:translateX(5px) skewX(.4deg);opacity:1}
+  55%{transform:translateX(0) skewX(0);opacity:1}
+  67%{transform:translateY(-3px) scale(1.012);opacity:1}
+  76%{transform:translateY(2px) scale(.996);opacity:.94}
+  84%{transform:translateY(-1px) scale(1.004);opacity:1}
+  100%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
 }
 .deletion-card::before{
   content:"";
@@ -144,15 +161,32 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
   background:#ff7777;
   box-shadow:0 0 18px rgba(255,119,119,.65);
   opacity:0;
-  animation:deletionScan .95s steps(5,end) .18s forwards;
+  animation:deletionScan 1.55s steps(9,end) .3s forwards;
+}
+.deletion-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 5px,rgba(255,255,255,.025) 6px);
+  opacity:0;
+  pointer-events:none;
+  animation:deletionNoise 1.8s steps(2,end) .2s forwards;
 }
 .deletion-card{position:relative;overflow:hidden}
 @keyframes deletionScan{
   0%{top:0;opacity:0}
-  12%{opacity:1}
-  45%{top:42%;opacity:.9}
-  72%{top:77%;opacity:.65}
+  8%{opacity:1}
+  28%{top:22%;opacity:.9}
+  51%{top:49%;opacity:.8}
+  76%{top:78%;opacity:.65}
   100%{top:100%;opacity:0}
+}
+@keyframes deletionNoise{
+  0%,100%{opacity:0}
+  20%{opacity:.5}
+  35%{opacity:.12}
+  55%{opacity:.38}
+  72%{opacity:.08}
 }
 @keyframes deletionLine{to{transform:scaleX(1)}}
 @keyframes deletionStamp{to{opacity:1}}
@@ -169,10 +203,15 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 
 <body>
 
-<div class="loader" id="loader">
+<div class="loader intro-loader" id="loader">
   <div class="loader-content">
-    <h1>CIT</h1>
+    <div class="loader-brand">
+      <h1>CIT-HUB</h1>
+      <div class="loader-version">Version: Anon347</div>
+    </div>
     <div class="loader-sub">Autonomous Student Network</div>
+    <button class="loader-enter" id="enterSiteBtn" type="button">Enter the network</button>
+    <div class="loader-hint">Click to continue</div>
   </div>
 </div>
 
@@ -350,6 +389,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
     <div class="deletion-meta" id="deletionMeta"></div>
     <div class="deletion-line"></div>
     <div class="deletion-stamp">THE RECORD HAS BEEN PURGED FROM THE PUBLIC FEED.</div>
+    <button class="deletion-ok" id="deletionOkBtn" type="button">OK</button>
   </div>
 </div>
 
@@ -548,16 +588,23 @@ async function removeModeratorUser(username) {
 }
 
 window.addEventListener("load", async () => {
-  setTimeout(() => {
-    document.getElementById("loader").classList.add("fade-out");
-    document.getElementById("site").classList.add("ready");
-    setTimeout(() => document.getElementById("loader").remove(), 600);
-  }, 600);
-
   const activeUser = localStorage.getItem("cit_active_user");
-  if (activeUser) {
-    showForum(activeUser);
-  }
+
+  const enterSiteBtn = document.getElementById("enterSiteBtn");
+  const introLoader = document.getElementById("loader");
+
+  enterSiteBtn.addEventListener("click", () => {
+    enterSiteBtn.disabled = true;
+    introLoader.classList.add("fade-out");
+    document.getElementById("site").classList.add("ready");
+
+    setTimeout(() => {
+      introLoader.remove();
+      if (activeUser) {
+        showForum(activeUser);
+      }
+    }, 650);
+  });
 });
 
 function playTransitionLoader(subtitleText, callback) {
@@ -926,21 +973,46 @@ function playNextDeletionAnimation() {
   const overlay = document.getElementById("deletionOverlay");
   const title = document.getElementById("deletionTitle");
   const meta = document.getElementById("deletionMeta");
+  const okBtn = document.getElementById("deletionOkBtn");
 
   title.textContent = event.title || "Post removed.";
   meta.textContent = `${event.category || "POST"} • @${event.anonymous_name || "anonymous"} • removed by @${event.deleted_by || "moderation"}`;
 
+  okBtn.classList.remove("ready");
+  okBtn.disabled = true;
   overlay.classList.remove("show");
   void overlay.offsetWidth;
   overlay.classList.add("show");
   overlay.setAttribute("aria-hidden", "false");
 
+  // The animation runs for 2.2s. Only after it finishes does the OK button
+  // become available, so users can close the event whenever they are ready.
   window.setTimeout(() => {
-    overlay.classList.remove("show");
-    overlay.setAttribute("aria-hidden", "true");
-    window.setTimeout(playNextDeletionAnimation, 220);
-  }, 1050);
+    if (!overlay.classList.contains("show")) return;
+    okBtn.disabled = false;
+    okBtn.classList.add("ready");
+    okBtn.focus({ preventScroll: true });
+  }, 2250);
 }
+
+function closeDeletionAnimation() {
+  const overlay = document.getElementById("deletionOverlay");
+  const okBtn = document.getElementById("deletionOkBtn");
+
+  okBtn.classList.remove("ready");
+  okBtn.disabled = true;
+  overlay.classList.remove("show");
+  overlay.setAttribute("aria-hidden", "true");
+
+  window.setTimeout(() => {
+    playNextDeletionAnimation();
+  }, 300);
+}
+
+document.getElementById("deletionOkBtn").addEventListener("click", closeDeletionAnimation);
+document.getElementById("deletionOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "deletionOverlay") return; // Require the explicit OK button.
+});
 
 async function checkForDeletedPosts() {
   if (!activeUsername) return;
