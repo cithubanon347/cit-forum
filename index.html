@@ -116,6 +116,46 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 
 .post{ background:#0a0a0a; border:1px solid var(--line); border-radius:18px; padding:22px; margin-bottom:12px; animation: slideUp 0.3s ease; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Post removal animation */
+.deletion-overlay{position:fixed;inset:0;z-index:2500;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .18s ease}
+.deletion-overlay.show{opacity:1;pointer-events:auto}
+.deletion-card{width:min(620px,90vw);background:#090909;border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px;box-shadow:0 30px 100px rgba(0,0,0,.7);transform:translateY(20px) scale(.97);opacity:0}
+.deletion-overlay.show .deletion-card{animation:deletionCard .7s cubic-bezier(.2,.8,.2,1) forwards}
+.deletion-kicker{font:9px "DM Mono",monospace;letter-spacing:.18em;color:#ff7777;text-transform:uppercase;margin-bottom:14px}
+.deletion-title{font-size:clamp(24px,4vw,42px);letter-spacing:-.04em;line-height:1.02;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.deletion-meta{margin-top:10px;color:#666;font:9px "DM Mono",monospace;text-transform:uppercase}
+.deletion-line{height:1px;background:#222;margin-top:24px;transform-origin:left;animation:deletionLine .9s ease .15s forwards;transform:scaleX(0)}
+.deletion-stamp{margin-top:18px;color:#777;font:10px "DM Mono",monospace;opacity:0;animation:deletionStamp .35s ease .55s forwards}
+@keyframes deletionCard{
+  0%{transform:translateY(20px) scale(.97);opacity:0;filter:blur(5px)}
+  18%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
+  52%{transform:translateX(0) skewX(0);opacity:1}
+  58%{transform:translateX(-7px) skewX(-1deg);opacity:.92}
+  63%{transform:translateX(8px) skewX(1deg);opacity:1}
+  69%{transform:translateX(-3px) skewX(0);opacity:.88}
+  78%{transform:translateY(-3px) scale(1.015);opacity:.55;filter:blur(.4px)}
+  100%{transform:translateY(-34px) scale(.82);opacity:0;filter:blur(7px)}
+}
+.deletion-card::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:2px;
+  background:#ff7777;
+  box-shadow:0 0 18px rgba(255,119,119,.65);
+  opacity:0;
+  animation:deletionScan .95s steps(5,end) .18s forwards;
+}
+.deletion-card{position:relative;overflow:hidden}
+@keyframes deletionScan{
+  0%{top:0;opacity:0}
+  12%{opacity:1}
+  45%{top:42%;opacity:.9}
+  72%{top:77%;opacity:.65}
+  100%{top:100%;opacity:0}
+}
+@keyframes deletionLine{to{transform:scaleX(1)}}
+@keyframes deletionStamp{to{opacity:1}}
 .post-meta{ display:flex; gap:12px; color:#4c4c4c; font:8px "DM Mono",monospace; text-transform:uppercase; align-items:center; }
 .category{ color:#aaa; }
 .post h3{ margin-top:14px; font-size:21px; }
@@ -230,7 +270,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
         </div>
         <div class="mono" style="color:#ffd700;">● OWNER</div>
       </div>
-      <p style="color:#888; font-size:12px; margin: 15px 0 25px;">Manage platform moderators. Added usernames instantly receive moderator privileges and delete permissions across all channels.</p>
+      <p style="color:#888; font-size:12px; margin: 15px 0 25px;">Manage platform moderators. Added usernames receive moderator privileges across devices. The owner can revoke those privileges at any time.</p>
       
       <div class="field">
         <label>Add Moderator Username <input id="newModInput" placeholder="Enter username to promote"></label>
@@ -302,6 +342,17 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
   </footer>
 </div>
 
+<!-- POST REMOVAL ANIMATION -->
+<div id="deletionOverlay" class="deletion-overlay" aria-hidden="true">
+  <div class="deletion-card">
+    <div class="deletion-kicker">MODERATION EVENT / CONTENT REMOVED</div>
+    <div class="deletion-title" id="deletionTitle">Post removed.</div>
+    <div class="deletion-meta" id="deletionMeta"></div>
+    <div class="deletion-line"></div>
+    <div class="deletion-stamp">THE RECORD HAS BEEN PURGED FROM THE PUBLIC FEED.</div>
+  </div>
+</div>
+
 <!-- TERMS & CONDITIONS MODAL -->
 <div id="tcModal" class="modal-overlay hidden">
   <div class="modal-card">
@@ -309,7 +360,7 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
       <h3>Community Protocol & Terms</h3>
       <button class="text-button" id="closeTc">✕</button>
     </div>
-    <p class="modal-desc">Before entering or establishing your profile, you must review and agree to the platform guidelines:</p>
+    <p class="modal-desc">Before entering or establishing your profile, review and agree to the platform guidelines. This is required only on your first accepted sign-in.</p>
     
     <div class="tc-list">
       <div class="tc-item">
@@ -403,36 +454,97 @@ button{ font-family:Inter,Arial,sans-serif; cursor:pointer; }
 <script>
 const OWNER_USERNAME = "admin";
 let pendingAuthAction = null;
-
-function getModerators() {
-  const mods = localStorage.getItem("cit_moderators");
-  if (!mods) {
-    const initial = ["admin"];
-    localStorage.setItem("cit_moderators", JSON.stringify(initial));
-    return initial;
-  }
-  return JSON.parse(mods);
-}
-
-function addModeratorUser(username) {
-  const mods = getModerators();
-  const clean = username.trim().toLowerCase();
-  if (clean && !mods.includes(clean)) {
-    mods.push(clean);
-    localStorage.setItem("cit_moderators", JSON.stringify(mods));
-    return true;
-  }
-  return false;
-}
-
-function isUserMod(username) {
-  if (!username) return false;
-  return getModerators().includes(username.toLowerCase());
-}
+let moderatorCache = null;
+let deletionAnimationQueue = [];
+let deletionAnimationRunning = false;
 
 function isUserOwner(username) {
   if (!username) return false;
   return username.toLowerCase() === OWNER_USERNAME.toLowerCase();
+}
+
+/*
+  Moderators are stored in Supabase instead of localStorage so the owner can
+  add/remove moderators and the privileges apply across devices.
+*/
+async function getModerators(forceRefresh = false) {
+  if (moderatorCache && !forceRefresh) return moderatorCache;
+
+  const { data, error } = await db
+    .from("moderators")
+    .select("username")
+    .order("username", { ascending: true });
+
+  if (error) {
+    console.error("Could not load moderators:", error);
+    return moderatorCache || [OWNER_USERNAME];
+  }
+
+  moderatorCache = [...new Set([
+    OWNER_USERNAME,
+    ...(data || []).map(row => String(row.username).toLowerCase())
+  ])];
+
+  return moderatorCache;
+}
+
+async function isUserMod(username) {
+  if (!username) return false;
+  const mods = await getModerators();
+  return mods.includes(username.toLowerCase());
+}
+
+async function addModeratorUser(username) {
+  const clean = username.trim().toLowerCase();
+
+  if (!/^[a-z0-9_.-]{3,24}$/.test(clean) || clean === OWNER_USERNAME) {
+    return { ok: false, message: "Enter a valid username. The owner account cannot be changed here." };
+  }
+
+  const { data: existingUser, error: userError } = await db
+    .from("user_security")
+    .select("username")
+    .eq("username", clean)
+    .maybeSingle();
+
+  if (userError) {
+    console.error(userError);
+    return { ok: false, message: "Could not verify that account." };
+  }
+
+  if (!existingUser) {
+    return { ok: false, message: "That username does not exist yet." };
+  }
+
+  const { error } = await db.from("moderators").insert([{ username: clean }]);
+
+  if (error) {
+    if (error.code === "23505") return { ok: false, message: "That user is already a moderator." };
+    return { ok: false, message: error.message };
+  }
+
+  moderatorCache = null;
+  await getModerators(true);
+  return { ok: true };
+}
+
+async function removeModeratorUser(username) {
+  const clean = username.trim().toLowerCase();
+
+  if (!clean || clean === OWNER_USERNAME) {
+    return { ok: false, message: "The owner account cannot be removed." };
+  }
+
+  const { error } = await db
+    .from("moderators")
+    .delete()
+    .eq("username", clean);
+
+  if (error) return { ok: false, message: error.message };
+
+  moderatorCache = null;
+  await getModerators(true);
+  return { ok: true };
 }
 
 window.addEventListener("load", async () => {
@@ -514,10 +626,10 @@ signupForm.onsubmit = (e) => {
   openTcModal();
 };
 
-loginForm.onsubmit = (e) => {
+/* Existing users no longer see Terms on every login. */
+loginForm.onsubmit = async (e) => {
   e.preventDefault();
-  pendingAuthAction = executeLogin;
-  openTcModal();
+  await executeLogin();
 };
 
 function openTcModal() {
@@ -527,6 +639,7 @@ function openTcModal() {
 
 document.getElementById("closeTc").onclick = () => {
   document.getElementById("tcModal").classList.add("hidden");
+  pendingAuthAction = null;
 };
 
 document.getElementById("tcProceedBtn").onclick = () => {
@@ -563,6 +676,10 @@ async function executeSignup() {
     { username: username, question: question, answer: answer, password_hint: password }
   ]);
 
+  // Remember that the signup flow already included the terms screen.
+  // The acceptance is finalized after Supabase authentication succeeds.
+  localStorage.setItem(`cit_terms_pending_${username}`, "1");
+
   playTransitionLoader("Establishing Secure Vault...", async () => {
     await loginUserDirect(username, password);
   });
@@ -587,9 +704,64 @@ async function loginUserDirect(username, password) {
 
   if (error) {
     showMessage("loginMessage", "Wrong User ID or password.", "error");
+    return;
+  }
+
+  localStorage.setItem("cit_active_user", username);
+
+  /*
+    Terms are stored in Supabase, not just localStorage. That means a user
+    who logs in from another device still sees the terms only on their first
+    accepted sign-in.
+  */
+  const { data: termsRecord, error: termsError } = await db
+    .from("terms_acceptances")
+    .select("username")
+    .eq("username", username)
+    .maybeSingle();
+
+  if (termsError) {
+    console.error("Could not check terms acceptance:", termsError);
+    showMessage("loginMessage", "Could not verify your terms status. Please try again.", "error");
+    return;
+  }
+
+  if (!termsRecord) {
+    const acceptedDuringSignup = localStorage.getItem(`cit_terms_pending_${username}`) === "1";
+
+    if (acceptedDuringSignup) {
+      const { error: acceptError } = await db.from("terms_acceptances").upsert([{
+        username: username,
+        accepted_at: new Date().toISOString()
+      }], { onConflict: "username" });
+
+      if (acceptError) {
+        showMessage("loginMessage", "Could not save your agreement. Please try again.", "error");
+        return;
+      }
+
+      localStorage.removeItem(`cit_terms_pending_${username}`);
+      await showForum(username);
+      return;
+    }
+
+    pendingAuthAction = async () => {
+      const { error: acceptError } = await db.from("terms_acceptances").upsert([{
+        username: username,
+        accepted_at: new Date().toISOString()
+      }], { onConflict: "username" });
+
+      if (acceptError) {
+        showMessage("loginMessage", "Could not save your agreement. Please try again.", "error");
+        return;
+      }
+
+      await showForum(username);
+    };
+    openTcModal();
   } else {
-    localStorage.setItem("cit_active_user", username);
-    showForum(username);
+    localStorage.removeItem(`cit_terms_pending_${username}`);
+    await showForum(username);
   }
 }
 
@@ -651,15 +823,15 @@ document.getElementById("forgotSubmitBtn").onclick = () => {
 let activeUsername = null;
 let selectedCategory = "All";
 
-function showForum(username) {
+async function showForum(username) {
   activeUsername = username;
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("ownerPage").classList.add("hidden");
   document.getElementById("forumPage").classList.remove("hidden");
 
   const isOwner = isUserOwner(username);
-  const isMod = isUserMod(username);
-  
+  const isMod = await isUserMod(username);
+
   let badgeHTML = "";
   if (isOwner) badgeHTML = `<span class="owner-badge">OWNER</span>`;
   else if (isMod) badgeHTML = `<span class="mod-badge">MOD</span>`;
@@ -676,14 +848,16 @@ function showForum(username) {
     document.getElementById("ownerDashboardBtn").classList.add("hidden");
   }
 
-  loadPosts();
+  await loadPosts();
+  await checkForDeletedPosts();
 }
 
-function showOwnerPage() {
+async function showOwnerPage() {
+  if (!isUserOwner(activeUsername)) return;
   document.getElementById("authPage").classList.add("hidden");
   document.getElementById("forumPage").classList.add("hidden");
   document.getElementById("ownerPage").classList.remove("hidden");
-  renderOwnerModList();
+  await renderOwnerModList();
 }
 
 document.getElementById("backToForumBtn").onclick = () => {
@@ -691,28 +865,125 @@ document.getElementById("backToForumBtn").onclick = () => {
   showForum(activeUsername);
 };
 
-document.getElementById("addModBtn").onclick = () => {
+document.getElementById("addModBtn").onclick = async () => {
+  if (!isUserOwner(activeUsername)) return;
+
   const newMod = document.getElementById("newModInput").value.trim();
   if (!newMod) return;
 
-  const added = addModeratorUser(newMod);
-  if (added) {
-    showMessage("ownerMessage", `@${newMod} has been granted Moderator privileges!`, "success");
+  const result = await addModeratorUser(newMod);
+
+  if (result.ok) {
+    showMessage("ownerMessage", `@${newMod.toLowerCase()} has been granted Moderator privileges.`, "success");
     document.getElementById("newModInput").value = "";
-    renderOwnerModList();
+    await renderOwnerModList();
   } else {
-    showMessage("ownerMessage", "Moderator already exists or invalid username.", "error");
+    showMessage("ownerMessage", result.message, "error");
   }
 };
 
-function renderOwnerModList() {
+async function handleRemoveModerator(username) {
+  if (!isUserOwner(activeUsername)) return;
+  if (!confirm(`Remove moderator privileges from @${username}?`)) return;
+
+  const result = await removeModeratorUser(username);
+
+  if (result.ok) {
+    showMessage("ownerMessage", `@${username} is no longer a moderator.`, "success");
+    await renderOwnerModList();
+  } else {
+    showMessage("ownerMessage", result.message, "error");
+  }
+}
+
+async function renderOwnerModList() {
   const container = document.getElementById("modListContainer");
-  const mods = getModerators();
+  const mods = await getModerators(true);
+
   container.innerHTML = mods.map(m => `
-    <span style="background:var(--card2); border:1px solid var(--line); padding:6px 12px; border-radius:8px; font:10px 'DM Mono',monospace; color:#ccc;">
-      @${escapeHTML(m)} ${m === OWNER_USERNAME ? '(Owner)' : ''}
-    </span>
+    <div style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--line);padding:6px 8px 6px 12px;border-radius:8px;">
+      <span style="font:10px 'DM Mono',monospace;color:#ccc;">
+        @${escapeHTML(m)} ${m === OWNER_USERNAME ? '(Owner)' : ''}
+      </span>
+      ${m !== OWNER_USERNAME ? `<button class="delete-btn" style="margin-left:4px;" onclick="handleRemoveModerator('${escapeHTML(m)}')">Remove</button>` : ''}
+    </div>
   `).join("");
+}
+
+function queueDeletionAnimation(event) {
+  deletionAnimationQueue.push(event);
+  if (!deletionAnimationRunning) playNextDeletionAnimation();
+}
+
+function playNextDeletionAnimation() {
+  if (!deletionAnimationQueue.length) {
+    deletionAnimationRunning = false;
+    return;
+  }
+
+  deletionAnimationRunning = true;
+  const event = deletionAnimationQueue.shift();
+  const overlay = document.getElementById("deletionOverlay");
+  const title = document.getElementById("deletionTitle");
+  const meta = document.getElementById("deletionMeta");
+
+  title.textContent = event.title || "Post removed.";
+  meta.textContent = `${event.category || "POST"} • @${event.anonymous_name || "anonymous"} • removed by @${event.deleted_by || "moderation"}`;
+
+  overlay.classList.remove("show");
+  void overlay.offsetWidth;
+  overlay.classList.add("show");
+  overlay.setAttribute("aria-hidden", "false");
+
+  window.setTimeout(() => {
+    overlay.classList.remove("show");
+    overlay.setAttribute("aria-hidden", "true");
+    window.setTimeout(playNextDeletionAnimation, 220);
+  }, 1050);
+}
+
+async function checkForDeletedPosts() {
+  if (!activeUsername) return;
+
+  const key = `cit_last_deletion_check_${activeUsername}`;
+  const stored = localStorage.getItem(key);
+
+  /*
+    On the very first login on this browser, check the last 24 hours so a
+    newly returning user can still see recent moderation events. After that,
+    only events since the previous successful check are shown.
+  */
+  const since = stored || new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await db
+    .from("post_deletion_events")
+    .select("id, post_id, title, category, anonymous_name, deleted_by, deleted_by_role, deleted_at")
+    .gt("deleted_at", since)
+    .in("deleted_by_role", ["owner", "moderator"])
+    .order("deleted_at", { ascending: true })
+    .limit(25);
+
+  if (error) {
+    console.warn("Could not check moderation events:", error);
+    return;
+  }
+
+  const now = new Date().toISOString();
+  localStorage.setItem(key, now);
+
+  if (!data?.length) return;
+
+  /*
+    Do not replay events performed by this same browser session.
+  */
+  const ownEventKey = `cit_own_deletion_events_${activeUsername}`;
+  const ownIds = JSON.parse(localStorage.getItem(ownEventKey) || "[]");
+
+  data.forEach(event => {
+    if (String(event.deleted_by).toLowerCase() === activeUsername.toLowerCase()) return;
+    if (ownIds.includes(String(event.id))) return;
+    queueDeletionAnimation(event);
+  });
 }
 
 async function loadPosts() {
@@ -737,25 +1008,28 @@ async function loadPosts() {
     return;
   }
 
-  const isMod = isUserMod(activeUsername);
+  const mods = await getModerators();
+  const activeName = String(activeUsername || "").toLowerCase();
+  const isMod = mods.includes(activeName);
 
   container.innerHTML = posts.map(post => {
-    const authorOwner = isUserOwner(post.anonymous_name);
-    const authorIsMod = isUserMod(post.anonymous_name);
-    
+    const authorName = String(post.anonymous_name || "").toLowerCase();
+    const authorOwner = isUserOwner(authorName);
+    const authorIsMod = mods.includes(authorName);
+
     let authorBadge = "";
     if (authorOwner) authorBadge = `<span class="owner-badge">OWNER</span>`;
     else if (authorIsMod) authorBadge = `<span class="mod-badge">MOD</span>`;
 
-    const canDelete = isMod || (activeUsername && post.anonymous_name.toLowerCase() === activeUsername.toLowerCase());
-    
+    const canDelete = isMod || (activeUsername && authorName === activeName);
+
     return `
-      <article class="post" data-id="${post.id}">
+      <article class="post" data-id="${escapeHTML(post.id)}">
         <div class="post-meta">
           <span class="category">${escapeHTML(post.category)}</span>
           <span>@${escapeHTML(post.anonymous_name)} ${authorBadge}</span>
           <span>${new Date(post.created_at).toLocaleString()}</span>
-          ${canDelete ? `<button class="delete-btn" data-delete-id="${post.id}">Delete</button>` : ``}
+          ${canDelete ? `<button class="delete-btn" data-delete-id="${escapeHTML(post.id)}">Delete</button>` : ``}
         </div>
         <h3>${escapeHTML(post.title)}</h3>
         <p>${escapeHTML(post.body)}</p>
@@ -767,16 +1041,61 @@ async function loadPosts() {
 document.getElementById("posts").onclick = async (e) => {
   const btn = e.target.closest("[data-delete-id]");
   if (!btn) return;
-  
+
   const id = btn.getAttribute("data-delete-id");
   if (!confirm("Are you sure you want to delete this post?")) return;
 
-  const { error } = await db.from('posts').delete().eq('id', id);
+  const postCard = btn.closest(".post");
+  const title = postCard?.querySelector("h3")?.textContent || "Untitled post";
+  const category = postCard?.querySelector(".category")?.textContent || "Post";
+  const authorSpan = postCard?.querySelector(".post-meta span:nth-child(2)");
+  const authorText = authorSpan?.textContent || "";
+  const anonymousName = authorText
+    .replace(/^@/, "")
+    .replace(/\s+(OWNER|MOD).*$/i, "")
+    .trim();
+
+  const moderator = await isUserMod(activeUsername);
+  const deletionRole = isUserOwner(activeUsername) ? "owner" : (moderator ? "moderator" : "author");
+
+  /*
+    Moderated deletions are logged before the hard delete. This is what makes
+    the offline-user animation possible: the event survives after the post is gone.
+  */
+  if (deletionRole !== "author") {
+    const { error: eventError } = await db.from("post_deletion_events").insert([{
+      post_id: String(id),
+      title: title,
+      category: category,
+      anonymous_name: anonymousName,
+      deleted_by: activeUsername,
+      deleted_by_role: deletionRole
+    }]);
+
+    if (eventError) {
+      console.error("Deletion event could not be recorded:", eventError);
+      alert("The post was not removed because the moderation event could not be recorded.");
+      return;
+    }
+  }
+
+  const { error } = await db.from("posts").delete().eq("id", id);
+
   if (error) {
     alert("Failed to delete post: " + error.message);
-  } else {
-    loadPosts();
+    return;
   }
+
+  if (deletionRole !== "author") {
+    queueDeletionAnimation({
+      title,
+      category,
+      anonymous_name: anonymousName,
+      deleted_by: activeUsername
+    });
+  }
+
+  await loadPosts();
 };
 
 document.getElementById("newPostBtn").onclick = () => document.getElementById("newPostBox").classList.remove("hidden");
