@@ -1040,6 +1040,7 @@ async function checkForDeletedPosts() {
     .from("post_deletion_events")
     .select("id, post_id, title, category, anonymous_name, deleted_by, deleted_by_role, deleted_at")
     .gt("deleted_at", since)
+    .eq("anonymous_name", activeUsername)
     .in("deleted_by_role", ["owner", "moderator"])
     .order("deleted_at", { ascending: true })
     .limit(25);
@@ -1211,7 +1212,10 @@ document.getElementById("posts").onclick = async (e) => {
     return;
   }
 
-  if (deletionRole !== "author") {
+  // Only the account that originally posted the content should see the
+  // deletion animation. The moderator/owner who removed it does not.
+  if (deletionRole !== "author" &&
+      anonymousName.toLowerCase() === activeUsername.toLowerCase()) {
     queueDeletionAnimation({
       title,
       category,
